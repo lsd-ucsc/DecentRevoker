@@ -207,3 +207,4 @@ set(MBEDTLS_LIBRARY mbedtls)
 ################################################################################
 
 add_subdirectory(src)
+add_subdirectory(tests)
