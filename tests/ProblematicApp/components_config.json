@@ -1,7 +1,7 @@
 {
 	"EnclaveImage": {
-		"ImagePath": "libDecentRevoker_trusted.signed.so",
-		"TokenPath": "DecentRevoker_Enclave.token"
+		"ImagePath": "libProblematicApp_trusted.signed.so",
+		"TokenPath": "ProblematicApp_Enclave.token"
 	},
 	"AuthorizedComponents": {
 		"0000000000000000000000000000000000000000000000000000000000000000" : {
@@ -18,9 +18,9 @@
 			"Name": "DecentRevoker",
 			"Endpoints" : {
 				"Inst1" : {
-					"IP": "0.0.0.0",
+					"IP": "127.0.0.1",
 					"Port": 10002,
-					"Incoming": true
+					"Incoming": false
 				}
 			}
 		},

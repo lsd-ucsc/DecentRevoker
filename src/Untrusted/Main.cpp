@@ -5,6 +5,7 @@
 
 
 #include <memory>
+#include <string>
 
 #include <DecentEnclave/Common/Platform/Print.hpp>
 #include <DecentEnclave/Common/Sgx/MbedTlsInit.hpp>
@@ -14,6 +15,7 @@
 #include <SimpleConcurrency/Threading/ThreadPool.hpp>
 #include <SimpleJson/SimpleJson.hpp>
 #include <SimpleObjects/Internal/make_unique.hpp>
+#include <SimpleObjects/SimpleObjects.hpp>
 #include <SimpleSysIO/SysCall/Files.hpp>
 
 #include "DecentRevoker.hpp"
@@ -25,21 +27,35 @@ using namespace DecentEnclave::Common;
 using namespace DecentEnclave::Untrusted;
 using namespace DecentRevoker;
 using namespace SimpleConcurrency::Threading;
+using namespace SimpleObjects;
 using namespace SimpleSysIO::SysCall;
 
 
 int main(int argc, char* argv[]) {
-	(void)argc;
-	(void)argv;
+	std::string configPath;
+	if (argc == 1)
+	{
+		configPath = "../../src/components_config.json";
+	}
+	else if (argc == 2)
+	{
+		configPath = argv[1];
+	}
+	else
+	{
+		Common::Platform::Print::StrErr("Unexpected number of arguments.");
+		Common::Platform::Print::StrErr(
+			"Only the path to the components configuration file is needed."
+		);
+		return -1;
+	}
 
 	// Init MbedTLS
 	Common::Sgx::MbedTlsInit::Init();
 
 
 	// Read in components config
-	auto configFile = RBinaryFile::Open(
-		"../../src/components_config.json"
-	);
+	auto configFile = RBinaryFile::Open(configPath);
 	auto configJson = configFile->ReadBytes<std::string>();
 	auto config = SimpleJson::LoadStr(configJson);
 	std::vector<uint8_t> authListAdvRlp = Config::ConfigToAuthListAdvRlp(config);
@@ -64,8 +80,13 @@ int main(int argc, char* argv[]) {
 
 
 	// Create enclave
+	const auto& imgConfig = config.AsDict()[String("EnclaveImage")].AsDict();
+	std::string imgPath = imgConfig[String("ImagePath")].AsString().c_str();
+	std::string tokenPath = imgConfig[String("TokenPath")].AsString().c_str();
 	auto enclave = std::make_shared<DecentRevoker::DecentRevoker>(
-		authListAdvRlp
+		authListAdvRlp,
+		imgPath,
+		tokenPath
 	);
 
 
