@@ -80,12 +80,12 @@ inline void HandleRevokeEvent(const SimpleObjects::ListBaseObj& evList)
 
 		auto blkNum = BlkNumFromBytesBase(blkNumRef);
 
-		std::string eventMsg;
-		eventMsg.resize(evDataRef.size());
-		std::memcpy(&(eventMsg[0]), evDataRef.data(), evDataRef.size());
+		std::string dataHex = SimpleObjects::Codec::Hex::Encode<std::string>(
+			evDataRef
+		);
 
 		s_logger.Debug(
-			"Received message: " + eventMsg +
+			"Received Data: " + dataHex +
 			" @ block " + std::to_string(blkNum)
 		);
 	}
