@@ -94,15 +94,11 @@ inline void RequestAppCert(const std::string& keyName)
 }
 
 
-void SubscribeToDecentEthereum()
+void SubscribeToDecentEthereum(
+	const EclipseMonitor::Eth::ContractAddr& publisherAddr
+)
 {
-	auto msg = BuildSubscribeMsg(
-		// publisher addr: 0xe3561e185c482ae16e56377c362c13658c36ebc6
-		{
-			0xE3U, 0x56U, 0x1EU, 0x18U, 0x5CU, 0x48U, 0x2AU, 0xE1U, 0x6EU, 0x56U,
-			0x37U, 0x7CU, 0x36U, 0x2CU, 0x13U, 0x65U, 0x8CU, 0x36U, 0xEBU, 0xC6U,
-		}
-	);
+	auto msg = BuildSubscribeMsg(publisherAddr);
 
 	std::shared_ptr<Common::TlsSocket> tlsSocket = MakeLambdaCall(
 		"DecentEthereum",
@@ -132,6 +128,7 @@ void SubscribeToDecentEthereum()
 
 
 void Init(
+	const EclipseMonitor::Eth::ContractAddr& publisherAddr
 )
 {
 	GlobalInitialization();
@@ -141,20 +138,23 @@ void Init(
 	RequestAppCert<DecentCert_Secp256r1>("Secp256r1");
 	RequestAppCert<DecentCert_Secp256k1>("Secp256k1");
 
-	SubscribeToDecentEthereum();
+	SubscribeToDecentEthereum(publisherAddr);
 }
 
 } // namespace DecentRevoker
 
 
 extern "C" sgx_status_t ecall_decent_revoker_init(
-	int
+	const uint8_t* pub_addr
 )
 {
 	try
 	{
-		DecentRevoker::Init(
-		);
+		EclipseMonitor::Eth::ContractAddr pubAddr;
+		std::copy(pub_addr, pub_addr + pubAddr.size(), pubAddr.begin());
+
+		DecentRevoker::Init(pubAddr);
+
 		return SGX_SUCCESS;
 	}
 	catch(const std::exception& e)

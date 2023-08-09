@@ -31,6 +31,7 @@ decent_enclave_add_target_sgx(DecentRevoker
 		SimpleSysIO
 		SimpleConcurrency
 		DecentEnclave
+		EclipseMonitor
 		mbedTLScpp
 		mbedcrypto
 		mbedx509

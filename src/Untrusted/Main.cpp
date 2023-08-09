@@ -15,6 +15,7 @@
 #include <SimpleConcurrency/Threading/ThreadPool.hpp>
 #include <SimpleJson/SimpleJson.hpp>
 #include <SimpleObjects/Internal/make_unique.hpp>
+#include <SimpleObjects/Codec/Hex.hpp>
 #include <SimpleObjects/SimpleObjects.hpp>
 #include <SimpleSysIO/SysCall/Files.hpp>
 
@@ -79,11 +80,23 @@ int main(int argc, char* argv[]) {
 	);
 
 
+	// Publisher
+	const auto& pubConfig = config.AsDict()[String("Publisher")].AsDict();
+	std::string pubAddrHex = pubConfig[String("Addr")].AsString().c_str();
+	auto pubAddrBytes = Codec::Hex::Decode<std::vector<uint8_t> >(pubAddrHex);
+	EclipseMonitor::Eth::ContractAddr pubAddr;
+	if (pubAddrBytes.size() != pubAddr.size())
+	{
+		throw std::runtime_error("Invalid Publisher contract address.");
+	}
+	std::copy(pubAddrBytes.begin(), pubAddrBytes.end(), pubAddr.begin());
+
 	// Create enclave
 	const auto& imgConfig = config.AsDict()[String("EnclaveImage")].AsDict();
 	std::string imgPath = imgConfig[String("ImagePath")].AsString().c_str();
 	std::string tokenPath = imgConfig[String("TokenPath")].AsString().c_str();
 	auto enclave = std::make_shared<DecentRevoker::DecentRevoker>(
+		pubAddr,
 		authListAdvRlp,
 		imgPath,
 		tokenPath

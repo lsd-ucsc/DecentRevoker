@@ -8,12 +8,13 @@
 
 #include <DecentEnclave/Common/Sgx/Exceptions.hpp>
 #include <DecentEnclave/Untrusted/Sgx/DecentSgxEnclave.hpp>
+#include <EclipseMonitor/Eth/DataTypes.hpp>
 
 
 extern "C" sgx_status_t ecall_decent_revoker_init(
 	sgx_enclave_id_t eid,
 	sgx_status_t* retval,
-	int unused
+	const uint8_t* pub_addr
 );
 
 
@@ -31,6 +32,7 @@ public: // static members:
 public:
 
 	DecentRevoker(
+		const EclipseMonitor::Eth::ContractAddr& publisherAddr,
 		const std::vector<uint8_t>& authList,
 		const std::string& enclaveImgPath = DECENT_ENCLAVE_PLATFORM_SGX_IMAGE,
 		const std::string& launchTokenPath = DECENT_ENCLAVE_PLATFORM_SGX_TOKEN
@@ -40,7 +42,7 @@ public:
 		DECENTENCLAVE_SGX_ECALL_CHECK_ERROR_E_R(
 			ecall_decent_revoker_init,
 			m_encId,
-			0
+			publisherAddr.data()
 		);
 	}
 

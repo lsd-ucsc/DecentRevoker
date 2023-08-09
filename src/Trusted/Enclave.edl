@@ -16,7 +16,7 @@ enclave
 		/* define ECALLs here. */
 
 		public sgx_status_t ecall_decent_revoker_init(
-			int unused
+			[in, size=20] const uint8_t* pub_addr
 		);
 
 	}; // trusted
