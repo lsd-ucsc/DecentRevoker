@@ -37,7 +37,7 @@ void GenProblemCredOnce()
 
 	// 1. output certificate
 	auto certDer = DecentCert_Secp256k1::Fetch()->GetDer();
-	resJson[String("certDer")] = Codec::Hex::Encode<String>(certDer);
+	resJson[String("appCertDer")] = Codec::Hex::Encode<String>(certDer);
 
 	// 2. generate two messages
 	Bytes eventId;
@@ -110,9 +110,11 @@ void GenProblemCredOnce()
 	resJson[String("privKeyDer")] = Codec::Hex::Encode<String>(privKeyDer);
 
 	// finally, generate and print the json string
+	const BaseObj& resJsonObj = resJson;
 	SimpleJson::WriterConfig writeConf;
 	writeConf.m_indent = "\t";
-	std::string resStr = SimpleJson::DumpStr(resJson, writeConf);
+	writeConf.m_orderDict = true;
+	std::string resStr = SimpleJson::DumpStr(resJsonObj, writeConf);
 	logger.Info(resStr);
 }
 
@@ -121,7 +123,7 @@ void GenProblemCred()
 {
 	auto logger = LoggerFactory::GetLogger("GenProblemCred");
 
-	for (size_t i = 0; i < 2; ++i)
+	for (size_t i = 0; i < 1; ++i)
 	{
 		logger.Info(
 			"Generating problematic credentials " + std::to_string(i) + " ..."
