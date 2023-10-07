@@ -47,6 +47,9 @@ def main() -> None:
 	sock.connect((HOST_ADDR, HOST_PORT))
 	DoRequest(sock, request)
 
+	# import time
+	# time.sleep(10)
+
 	# SubscriberTransact
 	request = {
 		'method': 'SubscriberTransact',
@@ -54,8 +57,8 @@ def main() -> None:
 			binascii.hexlify(b'Hello World!').decode('utf-8'),
 		]
 	}
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sock.connect((HOST_ADDR, HOST_PORT))
+	# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# sock.connect((HOST_ADDR, HOST_PORT))
 	DoRequest(sock, request)
 
 	# Invalid method
@@ -63,8 +66,8 @@ def main() -> None:
 		'method': 'InvalidMethod',
 		'params': [ ]
 	}
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sock.connect((HOST_ADDR, HOST_PORT))
+	# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# sock.connect((HOST_ADDR, HOST_PORT))
 	DoRequest(sock, request)
 
 

@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import signal
+import socket
 import socketserver
 import subprocess
 import time
@@ -284,23 +285,51 @@ def GethProxyTCPHandler(proxyCore: GethProxy) -> type:
 			else:
 				return self.UnknownMethod(method)
 
+		def ConnectionClosing(
+			self,
+			client: tuple,
+			e: Union[Exception, None]
+		) -> None:
+			if e is None:
+				self.PROXY_CORE.logger.info(
+					'{}: Connection closed by the client'.format(client)
+				)
+			else:
+				self.PROXY_CORE.logger.info(
+					'{}: Exception {}. Closing the socket'.format(client, e)
+				)
+				# self.PROXY_CORE.logger.exception(e)
+
 		def handle(self):
-			self.PROXY_CORE.logger.info('New connection from {}'.format(self.client_address))
+			self.PROXY_CORE.logger.info('{}: New connection'.format(self.client_address))
 
-			# recv 64bit data length
-			dataLen = int.from_bytes(self.request.recv(8), byteorder='little')
-			# recv data
-			data = self.request.recv(dataLen)
+			sock: socket.socket = self.request
+			while True:
+				try:
+					# recv 64bit data length
+					rawSockData = sock.recv(8)
+					if len(rawSockData) == 0:
+						self.ConnectionClosing(client=self.client_address, e=None)
+						return
+					dataLen = int.from_bytes(rawSockData, byteorder='little')
+					# recv data
+					rawSockData = sock.recv(dataLen)
+					if len(rawSockData) == 0:
+						self.ConnectionClosing(client=self.client_address, e=None)
+						return
 
-			requestJson = json.loads(data)
-			responseJson = self.handleRequest(requestJson)
-			responseData = json.dumps(responseJson).encode('utf-8')
-			self.PROXY_CORE.logger.info('Response: {}'.format(responseData))
+					requestJson = json.loads(rawSockData)
+					responseJson = self.handleRequest(requestJson)
+					responseData = json.dumps(responseJson).encode('utf-8')
+					self.PROXY_CORE.logger.info('Response: {}'.format(responseData))
 
-			# send 64bit data length
-			self.request.sendall(len(responseData).to_bytes(8, byteorder='little'))
-			# send data
-			self.request.sendall(responseData)
+					# send 64bit data length
+					sock.sendall(len(responseData).to_bytes(8, byteorder='little'))
+					# send data
+					sock.sendall(responseData)
+				except Exception as e:
+					self.ConnectionClosing(client=self.client_address, e=e)
+					return
 
 	return TCPHandlerTemplate
 
