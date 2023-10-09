@@ -39,7 +39,7 @@ inline DecentEnclave::Common::DetMsg BuildSubscribeMsg(
 
 	DecentEnclave::Common::DetMsg msg;
 	//msg.get_Version() = 1;
-	msg.get_MsgId().get_MsgType() = SimpleObjects::String("Subscribe");
+	msg.get_MsgId().get_MsgType() = SimpleObjects::String("PubSub.Subscribe");
 	msg.get_MsgContent() = SimpleObjects::Bytes(
 		AdvancedRlp::GenericWriter::Write(msgContent)
 	);

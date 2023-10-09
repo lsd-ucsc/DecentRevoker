@@ -27,7 +27,7 @@ from PyEthHelper import EthContractHelper, GanacheAccounts
 HOST_ADDR = 'localhost'
 HOST_PORT = 51234
 
-USE_GANACHE = True
+USE_GANACHE = False
 KEY_FILE_PATH = '/home/public/ndss-ae/decent_keys.json'
 GETH_ADDR     = 'localhost'
 GETH_PORT     = 8546
@@ -38,10 +38,14 @@ BUILD_DIR = os.path.join(THIS_DIR, 'build')
 REPO_DIR = os.path.abspath(os.path.join(TARGET_DIR, '..', '..'))
 PUBSUB_REPO_DIR = os.path.abspath(os.path.join(REPO_DIR, '..', 'decent-pubsub-onchain'))
 PUBSUB_BUILD_DIR = os.path.join(PUBSUB_REPO_DIR, 'build')
+DEGETH_REPO_DIR = os.path.abspath(os.path.join(REPO_DIR, '..', 'DecentEthereum'))
 
 SUBS_CONTRACT_BASE_PATH = os.path.join(BUILD_DIR, 'HybridSubscriber')
 ORAC_CONTRACT_BASE_PATH = os.path.join(BUILD_DIR, 'Oracle')
 PUBS_CONTRACT_BASE_PATH = os.path.join(PUBSUB_BUILD_DIR, 'PubSub', 'PubSubService')
+
+DEGETH_CONF_FILE_PATH = os.path.join(DEGETH_REPO_DIR, 'src', 'components_config.json')
+
 CONF_FILE_PATH = os.path.join(TARGET_DIR, 'components_config.json')
 
 
@@ -49,7 +53,7 @@ class GethProxy(object):
 
 	@classmethod
 	def LoadContracts(cls, w3: Web3) -> Tuple[Contract, Contract]:
-		if USE_GANACHE:
+		if True: #USE_GANACHE:
 			pubsubContract = EthContractHelper.LoadContract(
 				w3=w3,
 				projConf=(
@@ -117,6 +121,7 @@ class GethProxy(object):
 				release=None, # use locally built contract
 				address=pubSubAddr,
 			)
+			pubSub.deployedBlockNum = deployReceipt.blockNumber
 
 		# deploy and register the oracle contract
 		deployReceipt = EthContractHelper.DeployContract(
@@ -146,7 +151,7 @@ class GethProxy(object):
 			arguments=[ pubSubAddr, oracleContract.address, ],
 			privKey=privKey,
 			gas=None, # let web3 estimate
-			value=w3.to_wei(0.001, 'ether'),
+			value=w3.to_wei(0.0001, 'ether'),
 			confirmPrompt=False # don't prompt for confirmation
 		)
 		subscriberContract = EthContractHelper.LoadContract(
@@ -339,11 +344,10 @@ def StartGanache() -> subprocess.Popen:
 		# we are using the actual Geth Client, so do nothing
 		return None
 
-	global GETH_ADDR, GETH_PORT, GANACHE_KEY_PATH, KEY_FILE_PATH
+	global GETH_ADDR, GETH_PORT, GANACHE_KEY_PATH
 	GETH_ADDR = 'localhost'
 	GETH_PORT = 7545
 	GANACHE_KEY_PATH = os.path.join(BUILD_DIR, 'ganache_keys.json')
-	KEY_FILE_PATH = os.path.join(BUILD_DIR, 'ganache_ckeys.json')
 
 	_NUM_KEYS = 10
 	_NET_ID = 1337
@@ -370,7 +374,9 @@ def StartGanache() -> subprocess.Popen:
 
 
 def SetupPrivKey(w3: Web3) -> str:
+	global KEY_FILE_PATH
 	if USE_GANACHE:
+		KEY_FILE_PATH = os.path.join(BUILD_DIR, 'ganache_ckeys.json')
 		GanacheAccounts.ChecksumGanacheKeysFile(
 			KEY_FILE_PATH,
 			GANACHE_KEY_PATH
@@ -449,6 +455,38 @@ def main():
 		)
 		# gethProxy.PublishData(data=b'Hello World!')
 		# gethProxy.TransactData(data=b'Hello World!')
+
+		# update the config file of this project
+		if not isinstance(gethProxy.pubsubContract, str):
+			# save the address of the pubsub contract
+			pubSubAddr = gethProxy.pubsubContract.address
+			if pubSubAddr.startswith('0x'):
+				pubSubAddr = pubSubAddr[2:]
+			conf['PubSub']['PubSubAddr'] = pubSubAddr
+
+		oracleAddr = gethProxy.oracleContract.address
+		if oracleAddr.startswith('0x'):
+			oracleAddr = oracleAddr[2:]
+		conf['PubSub']['PublisherAddr'] = oracleAddr
+
+		subAddr = gethProxy.subscriberContract.address
+		if subAddr.startswith('0x'):
+			subAddr = subAddr[2:]
+		conf['PubSub']['SubscriberAddr'] = subAddr
+
+		with open(CONF_FILE_PATH, 'w') as f:
+			json.dump(conf, f, indent='\t')
+
+		# update the config file for DecentEthereum
+		if not isinstance(gethProxy.pubsubContract, str):
+			with open(DEGETH_CONF_FILE_PATH, 'r') as f:
+				decentEthConf = json.load(f)
+
+			decentEthConf['PubSub']['PubSubAddr'] = pubSubAddr
+			decentEthConf['PubSub']['StartBlock'] = gethProxy.pubsubContract.deployedBlockNum
+
+			with open(DEGETH_CONF_FILE_PATH, 'w') as f:
+				json.dump(decentEthConf, f, indent='\t')
 
 		# start TCP server
 		handlerCls = GethProxyTCPHandler(gethProxy)

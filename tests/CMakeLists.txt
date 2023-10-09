@@ -5,3 +5,4 @@
 
 
 add_subdirectory(ProblematicApp)
+add_subdirectory(End2EndLatency)

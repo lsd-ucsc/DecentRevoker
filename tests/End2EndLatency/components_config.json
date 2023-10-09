@@ -1,0 +1,53 @@
+{
+	"EnclaveImage": {
+		"ImagePath": "libEnd2EndLatency_trusted.signed.so",
+		"TokenPath": "End2EndLatency_Enclave.token"
+	},
+	"AuthorizedComponents": {
+		"0000000000000000000000000000000000000000000000000000000000000000": {
+			"Name": "DecentServer",
+			"Endpoints": {
+				"Inst1": {
+					"IP": "127.0.0.1",
+					"Port": 10001,
+					"Incoming": false
+				}
+			}
+		},
+		"0000000000000000000000000000000000000000000000000000000000000001": {
+			"Name": "DecentRevoker",
+			"Endpoints": {
+				"Inst1": {
+					"IP": "0.0.0.0",
+					"Port": 10002,
+					"Incoming": true
+				}
+			}
+		},
+		"0000000000000000000000000000000000000000000000000000000000000002": {
+			"Name": "DecentEthereum",
+			"Endpoints": {
+				"Inst1": {
+					"IP": "127.0.0.1",
+					"Port": 10003,
+					"Incoming": false
+				}
+			}
+		},
+		"0000000000000000000000000000000000000000000000000000000000000003": {
+			"Name": "gethProxy",
+			"Endpoints": {
+				"Inst1": {
+					"IP": "127.0.0.1",
+					"Port": 51234,
+					"Incoming": false
+				}
+			}
+		}
+	},
+	"PubSub": {
+		"PublisherAddr": "e90613B4ba27E4880Ce397798b76077D2e786EC9",
+		"PubSubAddr": "Aacd64d2C8A53A492728679610A05865e360bF79",
+		"SubscriberAddr": "7c00d7eA2892D27756e86751a592645e51b4d36D"
+	}
+}
