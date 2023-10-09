@@ -7,7 +7,8 @@ import {Interface_PubSubService} from "./Interface_PubSubService.sol";
 
 contract HybridSubscriber {
 
-	event Confirmed(bytes data);
+	event PubsubConfirmed(bytes data);
+	event TransactionConfirmed(bytes data);
 
 	address public m_eventMgrAddr = address(0);
 	address public m_owner = address(0);
@@ -21,19 +22,15 @@ contract HybridSubscriber {
 		}(publisherAddr);
 	}
 
-	function confirmMsg(bytes memory data) private {
-		emit Confirmed(data);
-	}
-
 	function onNotify(bytes memory data) external {
 		require(m_eventMgrAddr != address(0), "Not subscribed");
 		require(m_eventMgrAddr == msg.sender, "Unauthorized");
-		confirmMsg(data);
+		emit PubsubConfirmed(data);
 	}
 
 	function onTransaction(bytes memory data) external {
 		require(m_owner == msg.sender, "Unauthorized");
-		confirmMsg(data);
+		emit TransactionConfirmed(data);
 	}
 
 }
