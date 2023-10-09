@@ -9,10 +9,11 @@
 #include <cstdint>
 
 #include <atomic>
+#include <condition_variable>
 #include <mutex>
 #include <vector>
 #include <stdexcept>
-#include <condition_variable>
+#include <tuple>
 
 #include <AdvancedRlp/AdvancedRlp.hpp>
 
@@ -20,14 +21,16 @@
 #include <DecentEnclave/Common/Logging.hpp>
 #include <DecentEnclave/Common/TlsSocket.hpp>
 
-#include <DecentEnclave/Trusted/Time.hpp>
-#include <DecentEnclave/Trusted/DecentLambdaClt.hpp>
 #include <DecentEnclave/Trusted/ComponentConnection.hpp>
+#include <DecentEnclave/Trusted/DecentLambdaClt.hpp>
+#include <DecentEnclave/Trusted/Files.hpp>
 #include <DecentEnclave/Trusted/HeartbeatRecvMgr.hpp>
 #include <DecentEnclave/Trusted/Sgx/Random.hpp>
+#include <DecentEnclave/Trusted/Time.hpp>
 
 #include <EclipseMonitor/Eth/AbiParser.hpp>
 
+#include <SimpleJson/SimpleJson.hpp>
 #include <SimpleObjects/Codec/Hex.hpp>
 
 
@@ -182,7 +185,9 @@ inline DecentEnclave::Common::DetMsg BuildPubRecSubscribeMsg(
 }
 
 
-inline void RunPubSubTest(
+inline
+std::tuple<uint64_t, uint64_t, uint64_t>
+RunPubSubTest(
 	const EclipseMonitor::Eth::ContractAddr& publisherAddr,
 	const EclipseMonitor::Eth::ContractAddr& subscriberAddr
 )
@@ -364,10 +369,14 @@ inline void RunPubSubTest(
 	);
 	subHbConstraint.reset();
 	subTlsSocket.reset();
+
+	return std::make_tuple(publishTime, pubTime.load(), subsTime.load());
 }
 
 
-inline void MonitorAndReactTest(
+inline
+std::tuple<uint64_t, uint64_t, uint64_t>
+MonitorAndReactTest(
 	const EclipseMonitor::Eth::ContractAddr& publisherAddr,
 	const EclipseMonitor::Eth::ContractAddr& subscriberAddr
 )
@@ -556,6 +565,8 @@ inline void MonitorAndReactTest(
 	);
 	subHbConstraint.reset();
 	subTlsSocket.reset();
+
+	return std::make_tuple(publishTime, pubTime.load(), subsTime.load());
 }
 
 
@@ -565,11 +576,50 @@ inline void RunTest(
 	const EclipseMonitor::Eth::ContractAddr& subscriberAddr
 )
 {
+	using namespace SimpleObjects;
+
+	static constexpr size_t sk_repeatTest = 1;
+
 	(void)pubsubAddr;
 
-	RunPubSubTest(publisherAddr, subscriberAddr);
+	List pubsubResult;
+	List monitorAndReactResult;
 
-	MonitorAndReactTest(publisherAddr, subscriberAddr);
+	for (size_t i = 0; i < sk_repeatTest; ++i)
+	{
+		uint64_t publishedOn = 0;
+		uint64_t oracleNotifiedOn = 0;
+		uint64_t subscriberConfirmOn = 0;
+
+		std::tie(publishedOn, oracleNotifiedOn, subscriberConfirmOn) =
+			RunPubSubTest(publisherAddr, subscriberAddr);
+		List pubsubResOneSet;
+		pubsubResOneSet.push_back(UInt64(publishedOn));
+		pubsubResOneSet.push_back(UInt64(oracleNotifiedOn));
+		pubsubResOneSet.push_back(UInt64(subscriberConfirmOn));
+		pubsubResult.push_back(std::move(pubsubResOneSet));
+
+		std::tie(publishedOn, oracleNotifiedOn, subscriberConfirmOn) =
+			MonitorAndReactTest(publisherAddr, subscriberAddr);
+		List monitorAndReactResOneSet;
+		monitorAndReactResOneSet.push_back(UInt64(publishedOn));
+		monitorAndReactResOneSet.push_back(UInt64(oracleNotifiedOn));
+		monitorAndReactResOneSet.push_back(UInt64(subscriberConfirmOn));
+		monitorAndReactResult.push_back(std::move(monitorAndReactResOneSet));
+	}
+
+	Dict testResults;
+	testResults[String("PubSub")] = std::move(pubsubResult);
+	testResults[String("MonitorAndReact")] = std::move(monitorAndReactResult);
+
+	SimpleJson::WriterConfig writeConf;
+	writeConf.m_indent = "\t";
+	std::string resJson = SimpleJson::DumpStr(testResults, writeConf);
+
+	// write to file
+	auto file = DecentEnclave::Trusted::
+		WBUntrustedFile::Create("End2EndLatencyResult.json");
+	file->WriteBytes(resJson);
 }
 
 
