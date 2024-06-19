@@ -214,7 +214,7 @@ RunPubSubTest(
 			Common::LoggerFactory::GetLogger(
 				"End2EndLatency::RunPubSubTest::pubsubCallback"
 			);
-		s_cbLogger.Debug("Received heartbeat message");
+		// s_cbLogger.Debug("Received heartbeat message");
 
 		// 1. Get value from event
 		auto msg = AdvancedRlp::Parse(heartbeatMsg);
@@ -224,9 +224,9 @@ RunPubSubTest(
 		const auto& msgDict = msg.AsDict();
 		const auto& evQueue = msgDict[sk_labelEvents].AsList();
 
-		s_cbLogger.Debug("Received " + std::to_string(evQueue.size()) + " events");
 		if (evQueue.size() > 0)
 		{
+			s_cbLogger.Debug("Received " + std::to_string(evQueue.size()) + " events");
 			const auto& evFields = evQueue[0].AsList();
 			const auto& evData = evFields[1].AsBytes();
 
@@ -251,7 +251,7 @@ RunPubSubTest(
 				"End2EndLatency::RunPubSubTest::subsCallback"
 			);
 
-		s_cbLogger.Debug("Received heartbeat message");
+		// s_cbLogger.Debug("Received heartbeat message");
 
 		// 1. Get value from event
 		auto msg = AdvancedRlp::Parse(heartbeatMsg);
@@ -261,9 +261,9 @@ RunPubSubTest(
 		const auto& msgDict = msg.AsDict();
 		const auto& recQueue = msgDict[sk_labelReceipts].AsList();
 
-		s_cbLogger.Debug("Received " + std::to_string(recQueue.size()) + " receipts");
 		if (recQueue.size() > 0)
 		{
+			s_cbLogger.Debug("Received " + std::to_string(recQueue.size()) + " receipts");
 			const auto& recFields = recQueue[0].AsList();
 			const auto& recData = recFields[2].AsBytes();
 			// parse ABI encoding in receipt data
@@ -404,7 +404,7 @@ MonitorAndReactTest(
 			Common::LoggerFactory::GetLogger(
 				"End2EndLatency::MonitorAndReactTest::oracleCallback"
 			);
-		s_cbLogger.Debug("Received heartbeat message");
+		// s_cbLogger.Debug("Received heartbeat message");
 
 		// 1. Get value from event
 		auto msg = AdvancedRlp::Parse(heartbeatMsg);
@@ -412,9 +412,9 @@ MonitorAndReactTest(
 		const auto& msgDict = msg.AsDict();
 		const auto& recQueue = msgDict[sk_labelReceipts].AsList();
 
-		s_cbLogger.Debug("Received " + std::to_string(recQueue.size()) + " receipts");
 		if (recQueue.size() > 0)
 		{
+			s_cbLogger.Debug("Received " + std::to_string(recQueue.size()) + " receipts");
 			const auto& recFields = recQueue[0].AsList();
 			const auto& recData = recFields[2].AsBytes();
 			// parse ABI encoding in receipt data
@@ -427,14 +427,14 @@ MonitorAndReactTest(
 				pubTime.store(DecentEnclave::Trusted::UntrustedTime::Timestamp());
 
 				// 4. Publish the same message to subscriber contract
-				s_cbLogger.Debug("Sending request to GethProxy");
+				// s_cbLogger.Debug("Sending request to GethProxy");
 				auto gethPxyCon = Trusted::ComponentConnection::Connect("gethProxy");
 				std::string pxyMsg =
 					"{\"method\": \"SubscriberTransact\", \"params\": [\""+
 						SimpleObjects::Codec::Hex::Encode<std::string>(expectedValue) +
 						"\"]}";
 				gethPxyCon->SizedSendBytes(pxyMsg);
-				s_cbLogger.Debug("Sent request: " + pxyMsg);
+				s_cbLogger.Debug("Sent GethProxy request: " + pxyMsg);
 				gethPxyCon.reset();
 			}
 		}
@@ -449,7 +449,7 @@ MonitorAndReactTest(
 			Common::LoggerFactory::GetLogger(
 				"End2EndLatency::MonitorAndReactTest::subsCallback"
 			);
-		s_cbLogger.Debug("Received heartbeat message");
+		// s_cbLogger.Debug("Received heartbeat message");
 
 		// 1. Get value from event
 		auto msg = AdvancedRlp::Parse(heartbeatMsg);
@@ -457,9 +457,9 @@ MonitorAndReactTest(
 		const auto& msgDict = msg.AsDict();
 		const auto& recQueue = msgDict[sk_labelReceipts].AsList();
 
-		s_cbLogger.Debug("Received " + std::to_string(recQueue.size()) + " receipts");
 		if (recQueue.size() > 0)
 		{
+			s_cbLogger.Debug("Received " + std::to_string(recQueue.size()) + " receipts");
 			const auto& recFields = recQueue[0].AsList();
 			const auto& recData = recFields[2].AsBytes();
 			// parse ABI encoding in receipt data
