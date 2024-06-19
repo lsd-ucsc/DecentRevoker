@@ -30,7 +30,7 @@ HOST_PORT = 51234
 USE_GANACHE = False
 KEY_FILE_PATH = '/home/public/ndss-ae/decent_keys.json'
 GETH_ADDR     = 'localhost'
-GETH_PORT     = 8546
+GETH_PORT     = 8548
 
 THIS_DIR  = os.path.dirname(os.path.abspath(__file__))
 TARGET_DIR = os.path.abspath(os.path.join(THIS_DIR, '..'))
@@ -47,6 +47,44 @@ PUBS_CONTRACT_BASE_PATH = os.path.join(PUBSUB_BUILD_DIR, 'PubSub', 'PubSubServic
 DEGETH_CONF_FILE_PATH = os.path.join(DEGETH_REPO_DIR, 'src', 'components_config.json')
 
 CONF_FILE_PATH = os.path.join(TARGET_DIR, 'components_config.json')
+
+
+def HighFeeCalculator(
+	ethGasPrice: int,
+	ethMaxPriorityFee: int,
+) -> Tuple[int, int]:
+	# print('ethGasPrice: {}'.format(ethGasPrice))
+	# print('ethMaxPriorityFee: {}'.format(ethMaxPriorityFee))
+
+	# determine max priority fee
+	# priority fee is 2% of base fee
+	maxPriorFee = (ethGasPrice * 2) // 100
+	# ensure it's higher than w3.eth.max_priority_fee
+	maxPriorFee = max(maxPriorFee, ethMaxPriorityFee)
+
+	maxPriorFee = maxPriorFee * 100
+
+	return maxPriorFee, ethGasPrice + maxPriorFee
+
+
+def LowFeeCalculator(
+	ethGasPrice: int,
+	ethMaxPriorityFee: int,
+) -> Tuple[int, int]:
+	# print('ethGasPrice: {}'.format(ethGasPrice))
+	# print('ethMaxPriorityFee: {}'.format(ethMaxPriorityFee))
+
+	# determine max priority fee
+	# priority fee is 2% of historical fee
+	maxPriorFee = (ethMaxPriorityFee * 1) // 100
+
+	return maxPriorFee, ethGasPrice + maxPriorFee
+
+
+MidFeeCalculator = EthContractHelper.DefaultFeeCalculator
+
+
+ExpFeeCalculator = MidFeeCalculator
 
 
 class GethProxy(object):
@@ -108,7 +146,8 @@ class GethProxy(object):
 				privKey=privKey,
 				gas=None, # let web3 estimate
 				value=0,
-				confirmPrompt=False # don't prompt for confirmation
+				confirmPrompt=False, # don't prompt for confirmation
+				feeCalculator=ExpFeeCalculator,
 			)
 			pubSubAddr = deployReceipt.contractAddress
 			pubSub = EthContractHelper.LoadContract(
@@ -122,6 +161,7 @@ class GethProxy(object):
 				address=pubSubAddr,
 			)
 			pubSub.deployedBlockNum = deployReceipt.blockNumber
+			pubSub.deployedTxHash = deployReceipt.transactionHash
 
 		# deploy and register the oracle contract
 		deployReceipt = EthContractHelper.DeployContract(
@@ -131,7 +171,8 @@ class GethProxy(object):
 			privKey=privKey,
 			gas=None, # let web3 estimate
 			value=0,
-			confirmPrompt=False # don't prompt for confirmation
+			confirmPrompt=False, # don't prompt for confirmation
+			feeCalculator=ExpFeeCalculator,
 		)
 		oracleContract = EthContractHelper.LoadContract(
 			w3=w3,
@@ -143,6 +184,8 @@ class GethProxy(object):
 			release=None, # use locally built contract
 			address=deployReceipt.contractAddress,
 		)
+		oracleContract.deployedBlockNum = deployReceipt.blockNumber
+		oracleContract.deployedTxHash = deployReceipt.transactionHash
 
 		# deploy and subscribe the subscriber contract
 		deployReceipt = EthContractHelper.DeployContract(
@@ -152,7 +195,8 @@ class GethProxy(object):
 			privKey=privKey,
 			gas=None, # let web3 estimate
 			value=w3.to_wei(0.0001, 'ether'),
-			confirmPrompt=False # don't prompt for confirmation
+			confirmPrompt=False, # don't prompt for confirmation
+			feeCalculator=ExpFeeCalculator,
 		)
 		subscriberContract = EthContractHelper.LoadContract(
 			w3=w3,
@@ -164,6 +208,8 @@ class GethProxy(object):
 			release=None, # use locally built contract
 			address=deployReceipt.contractAddress,
 		)
+		subscriberContract.deployedBlockNum = deployReceipt.blockNumber
+		subscriberContract.deployedTxHash = deployReceipt.transactionHash
 
 		return oracleContract, subscriberContract, pubSub
 
@@ -214,6 +260,24 @@ class GethProxy(object):
 			'Subscriber contract deployed at {}'.format(self.subscriberContract.address)
 		)
 
+		self.deploymentRec = {
+			'oracle': {
+				'blockNum': self.oracleContract.deployedBlockNum,
+				'txHash': self.oracleContract.deployedTxHash.hex(),
+			},
+			'subscriber': {
+				'blockNum': self.subscriberContract.deployedBlockNum,
+				'txHash': self.subscriberContract.deployedTxHash.hex(),
+			},
+		}
+		if not isinstance(self.pubsubContract, str):
+			self.deploymentRec['pubsub'] = {
+				'blockNum': self.pubsubContract.deployedBlockNum,
+				'txHash': self.pubsubContract.deployedTxHash.hex(),
+			}
+
+		self.transactionRec = []
+
 		_eventMgrAddr = self.GetEventMgrAddr(
 			w3=self.w3,
 			contract=self.oracleContract,
@@ -231,7 +295,12 @@ class GethProxy(object):
 			privKey=self.privKey,
 			confirmPrompt=False, # don't prompt for confirmation
 			gas=None,
+			feeCalculator=ExpFeeCalculator,
 		)
+		self.transactionRec.append({
+			'blockNum': receipt.blockNumber,
+			'txHash': receipt.transactionHash.hex(),
+		})
 
 	def TransactData(self, data: bytes) -> None:
 		receipt = EthContractHelper.CallContractFunc(
@@ -242,7 +311,12 @@ class GethProxy(object):
 			privKey=self.privKey,
 			confirmPrompt=False, # don't prompt for confirmation
 			gas=None,
+			feeCalculator=ExpFeeCalculator,
 		)
+		self.transactionRec.append({
+			'blockNum': receipt.blockNumber,
+			'txHash': receipt.transactionHash.hex(),
+		})
 
 
 def GethProxyTCPHandler(proxyCore: GethProxy) -> type:
@@ -434,6 +508,7 @@ def main():
 
 	# start Ganache if necessary
 	ganacheProc = StartGanache()
+	gethProxy = None
 
 	try:
 		# connect to Geth Client
@@ -496,7 +571,15 @@ def main():
 	finally:
 		# finish and exit
 		StopGanache(ganacheProc)
-		pass
+
+		if gethProxy is not None:
+			# write transaction record
+			rec = {
+				'deployments': gethProxy.deploymentRec,
+				'transactions': gethProxy.transactionRec,
+			}
+			with open(os.path.join(BUILD_DIR, 'GethProxyRecords.json'), 'w') as f:
+				json.dump(rec, f, indent='\t')
 
 
 if __name__ == '__main__':
