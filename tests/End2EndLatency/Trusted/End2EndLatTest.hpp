@@ -19,6 +19,7 @@
 
 #include <DecentEnclave/Common/DecentTlsConfig.hpp>
 #include <DecentEnclave/Common/Logging.hpp>
+#include <DecentEnclave/Common/Time.hpp>
 #include <DecentEnclave/Common/TlsSocket.hpp>
 
 #include <DecentEnclave/Trusted/ComponentConnection.hpp>
@@ -26,7 +27,6 @@
 #include <DecentEnclave/Trusted/Files.hpp>
 #include <DecentEnclave/Trusted/HeartbeatRecvMgr.hpp>
 #include <DecentEnclave/Trusted/Sgx/Random.hpp>
-#include <DecentEnclave/Trusted/Time.hpp>
 
 #include <EclipseMonitor/Eth/AbiParser.hpp>
 
@@ -234,7 +234,7 @@ RunPubSubTest(
 			if (evData == expectedValueBytes)
 			{
 				// 3. If yes, record the time
-				pubTime.store(DecentEnclave::Trusted::UntrustedTime::Timestamp());
+				pubTime.store(DecentEnclave::Common::UntrustedTime::Timestamp());
 
 				// 4. Notify the main thread
 				cv.notify_one();
@@ -273,7 +273,7 @@ RunPubSubTest(
 			if (confirmMsg == expectedValue)
 			{
 				// 3. If yes, record the time
-				subsTime.store(DecentEnclave::Trusted::UntrustedTime::Timestamp());
+				subsTime.store(DecentEnclave::Common::UntrustedTime::Timestamp());
 
 				// 4. Notify the main thread
 				cv.notify_one();
@@ -334,7 +334,7 @@ RunPubSubTest(
 	);
 
 	// 3. Record publish time
-	uint64_t publishTime = DecentEnclave::Trusted::UntrustedTime::Timestamp();
+	uint64_t publishTime = DecentEnclave::Common::UntrustedTime::Timestamp();
 
 	// 4. Publish message to publisher contract
 	auto gethPxyCon = Trusted::ComponentConnection::Connect("gethProxy");
@@ -424,7 +424,7 @@ MonitorAndReactTest(
 			if (confirmMsg == expectedValue)
 			{
 				// 3. If yes, record the time
-				pubTime.store(DecentEnclave::Trusted::UntrustedTime::Timestamp());
+				pubTime.store(DecentEnclave::Common::UntrustedTime::Timestamp());
 
 				// 4. Publish the same message to subscriber contract
 				// s_cbLogger.Debug("Sending request to GethProxy");
@@ -469,7 +469,7 @@ MonitorAndReactTest(
 			if (confirmMsg == expectedValue)
 			{
 				// 3. If yes, record the time
-				subsTime.store(DecentEnclave::Trusted::UntrustedTime::Timestamp());
+				subsTime.store(DecentEnclave::Common::UntrustedTime::Timestamp());
 
 				// 4. Notify the main thread
 				cv.notify_one();
@@ -530,7 +530,7 @@ MonitorAndReactTest(
 	);
 
 	// 3. Record publish time
-	uint64_t publishTime = DecentEnclave::Trusted::UntrustedTime::Timestamp();
+	uint64_t publishTime = DecentEnclave::Common::UntrustedTime::Timestamp();
 
 	// 4. Publish message to publisher contract
 	auto gethPxyCon = Trusted::ComponentConnection::Connect("gethProxy");
