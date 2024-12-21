@@ -578,7 +578,7 @@ inline void RunTest(
 {
 	using namespace SimpleObjects;
 
-	static constexpr size_t sk_repeatTest = 1;
+	static constexpr size_t sk_repeatTest = 10;
 
 	(void)pubsubAddr;
 
