@@ -1,0 +1,102 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Python: Current File",
+			"type": "python",
+			"request": "launch",
+			"python": "${workspaceFolder}/tests/End2EndLatency/contracts/build/venv/bin/python3",
+			"program": "${file}",
+			"args": [  ],
+			"console": "integratedTerminal",
+			"justMyCode": false
+		},
+		{
+			"name": "(gdb) Launch DecentRevoker",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/src/DecentRevoker",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}/build/src",
+			"environment": [
+				{
+					"name": "SGX_SDK",
+					"value": "/opt/intel/sgxsdk"
+				},
+				{
+					"name": "PATH",
+					"value": "$PATH:$SGX_SDK/bin:$SGX_SDK/bin/x64"
+				},
+				{
+					"name": "PKG_CONFIG_PATH",
+					"value": "$PKG_CONFIG_PATH:$SGX_SDK/pkgconfig"
+				},
+				{
+					"name": "LD_LIBRARY_PATH",
+					"value": "$LD_LIBRARY_PATH:$SGX_SDK/sdk_libs"
+				}
+			],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/opt/intel/sgxsdk/bin/sgx-gdb",
+			"setupCommands": [
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				},
+				{
+					"description": "Set Disassembly Flavor to Intel",
+					"text": "-gdb-set disassembly-flavor intel",
+					"ignoreFailures": true
+				}
+			]
+		},
+		{
+			"name": "(gdb) Launch ProblematicApp",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/tests/ProblematicApp/ProblematicApp",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}/build/tests/ProblematicApp",
+			"environment": [
+				{
+					"name": "SGX_SDK",
+					"value": "/opt/intel/sgxsdk"
+				},
+				{
+					"name": "PATH",
+					"value": "$PATH:$SGX_SDK/bin:$SGX_SDK/bin/x64"
+				},
+				{
+					"name": "PKG_CONFIG_PATH",
+					"value": "$PKG_CONFIG_PATH:$SGX_SDK/pkgconfig"
+				},
+				{
+					"name": "LD_LIBRARY_PATH",
+					"value": "$LD_LIBRARY_PATH:$SGX_SDK/sdk_libs"
+				}
+			],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/opt/intel/sgxsdk/bin/sgx-gdb",
+			"setupCommands": [
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				},
+				{
+					"description": "Set Disassembly Flavor to Intel",
+					"text": "-gdb-set disassembly-flavor intel",
+					"ignoreFailures": true
+				}
+			]
+		}
+	]
+}
